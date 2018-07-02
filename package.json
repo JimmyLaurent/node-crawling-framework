@@ -1,0 +1,17 @@
+{
+	"name": "node-crawling-framework",
+	"devDependencies": {
+	  "lerna": "^2.9.0"
+	},
+	"scripts": {
+	  "postinstall": "lerna bootstrap"
+	},
+	"prettier": {
+	  "singleQuote": true,
+	  "trailingComma": "none",
+	  "parser": "flow",
+	  "semi": true,
+	  "tabWidth": 2
+	}
+  }
+  
