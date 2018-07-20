@@ -8,6 +8,8 @@ const createRetryMiddleware = ({maxRetryTimes = 3}) => {
         next(req).then(res => {
           if (res.statusCode > 300 || res.statusCode < 200) {
             if (req.retryTimes < maxRetryTimes) {
+              // TODO: respect delay
+              downloader.logger.log('retry');
               req.retryTimes++;
               downloader.processResponse(res, req);
               return retryLoop();

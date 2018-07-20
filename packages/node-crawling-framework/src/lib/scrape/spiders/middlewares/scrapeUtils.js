@@ -61,7 +61,7 @@ const createScrapeUtilsMiddleware = () => {
         };
 
         response.scrapeRequests = function*(extractOptions, requestOptions) {
-          yield response
+          yield* response
             .getRootElement()
             .scrapeRequests(extractOptions, requestOptions);
         };

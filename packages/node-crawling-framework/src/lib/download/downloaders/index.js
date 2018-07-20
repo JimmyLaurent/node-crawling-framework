@@ -3,6 +3,7 @@ const RequestDownloader = require('./RequestDownloader');
 const DownloaderMiddlewares = require('./middlewares');
 
 module.exports = {
-  Downloaders: { BaseDownloader, RequestDownloader },
+  Downloaders: { RequestDownloader },
+  BaseDownloader,
   DownloaderMiddlewares
 };

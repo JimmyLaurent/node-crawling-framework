@@ -1,8 +1,8 @@
 module.exports = {
   settings: {
-    maxDownloadConcurency: 1, // maximum download concurrency, default: 1
+    maxDownloadConcurency: Infinity, // maximum download concurrency, default: 1
     filterDuplicateRequests: true, // filter already scraped requests, default: true
-    delay: 100, // delay in ms between requests, default: 0
+    delay: 0, // delay in ms between requests, default: 0
     maxConcurrentScraping: 500, // maximum concurrent scraping, default: 500
     maxConcurrentItemsProcessingPerResponse: 100, // maximum concurrent item processing per response, default: 100
     autoCloseOnIdle: true // auto close crawler when crawling is finished, default:true
@@ -18,8 +18,8 @@ module.exports = {
   },
   itemProcessor: {
     middlewares: {
-      jsonLineFileExporter: {}, // write scraped items to a json file, one line = one json (easier to parse atferwards, smaller memory footprint)
-      logger: {} // log scraped items through the crawler logger
+      //jsonLineFileExporter: {}, // write scraped items to a json file, one line = one json (easier to parse atferwards, smaller memory footprint)
+      //logger: {} // log scraped items through the crawler logger
     }
   },
   downloader: {

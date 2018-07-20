@@ -1,19 +1,23 @@
 const Promise = require('bluebird');
 const MemoryQueue = require('../queues/MemoryQueue');
+const EventEmitter = require('events');
 
-class BaseAsyncQueueProcessor {
+class BaseAsyncQueueProcessor extends EventEmitter {
   constructor(
     queue,
     {
       processLoopIntervalMs = 5000,
       autoCloseOnIdle = false,
+      delay = 0,
       processMethodName,
       ...rest
     } = {}
   ) {
+    super();
     this.settings = {
       processLoopIntervalMs,
       autoCloseOnIdle,
+      delay,
       ...rest
     };
     this.maxQueueSize = Infinity;
@@ -26,155 +30,126 @@ class BaseAsyncQueueProcessor {
     this.activeCount = 0;
     this.queue = queue || new MemoryQueue();
     this.processMethodName = processMethodName || 'process';
-    this.settings.delay = this.settings.delay || 0;
   }
 
-  schedule() {
-    return new Promise((resolve, reject) => {
-      if (arguments.length > 0) {
-        this.queue.enqueue(arguments, {
-          resolve: (...args) => resolve(...args),
-          reject: e => reject(e)
-        });
-        if (!this.running) {
-          this.start();
-        } else {
-          this.processLoop();
-        }
-      } else {
-        resolve();
-      }
-    });
-  }
+  async process() {}
 
-  process() {}
-
-  processNext() {
-    let next = this.queue.dequeue();
-    let nextProcessJobArgs;
-    let callbacks;
-    if (next) {
-      nextProcessJobArgs = next.args;
-      callbacks = next.callbacks;
-    }
-
+  doProcess({ args = [] }) {
     this.activeCount++;
-    let process;
-    if (nextProcessJobArgs) {
-      process = this[this.processMethodName](...nextProcessJobArgs);
-    } else {
-      process = this[this.processMethodName]();
-    }
-    Promise.resolve(process)
-      .then(result => {
-        if (callbacks && callbacks.resolve) {
-          callbacks.resolve(result);
-        }
-      })
-      .catch(e => {
-        if (callbacks && callbacks.reject) {
-          callbacks.reject(e);
-        }
-      })
+    this.emit('process', args);
+    const process = Promise.resolve(this[this.processMethodName](...args));
+    process
+      .then(result => this.emit('success', result, ...args))
+      .catch(error => this.emit('error', error))
       .then(() => Promise.delay(this.settings.delay))
-      .finally(() => {
-        this.activeCount--;
-        !this.queue.isEmpty() && this.processLoop();
-
-        if (this.settings.autoCloseOnIdle && this.isIdle()) {
-          this.close();
+      .finally(async () => {
+        if (--this.activeCount === 0 && (await this.queue.isEmpty())) {
+          this.emit('drained');
         }
-      });
-  }
-
-  isIdle() {
-    return !this.paused && this.activeCount === 0;
-  }
-
-  start() {
-    let openPromises = this.openPromiseCallbacks.map(cb =>
-      Promise.resolve(cb())
-    );
-
-    if (!this.running) {
-      return Promise.all(openPromises).then(() => {
-        this.closing = false;
-        this.running = true;
         this.processLoop();
-        return this.onClose();
       });
+  }
+
+  async processNext() {
+    const next = await this.queue.dequeue();
+    if (next) {
+      this.doProcess(next);
+      return true;
+    } else {
+      return await this.scheduleNext();
     }
-    throw new Error('Queue processor already started');
+  }
+
+  async schedule() {
+    if (arguments.length === 0) {
+      throw new Error('AsyncQueueHandler: nothing to schedule');
+    }
+    await this.queue.enqueue(arguments);
+    if (this.running) {
+      this.processLoop();
+    }
+  }
+
+  async scheduleNext() {
+    return false;
+  }
+
+  async isIdle() {
+    return (
+      !this.paused && this.activeCount === 0 && (await this.queue.isEmpty())
+    );
+  }
+
+  async start() {
+    if (!this.running) {
+      await this.open();
+      this.running = true;
+      this.closing = false;
+      this.processLoop();
+      return null;
+    }
+    throw new Error('Async queue handler already started');
   }
 
   pause() {
     this.paused = true;
   }
 
-  unpause() {
+  resume() {
     this.paused = false;
+    this.processLoop();
   }
 
   canProcessMore() {
-    return !this.closing && !this.paused;
+    return this.running && !this.closing && !this.paused;
   }
 
   canQueueMore() {
     return this.queue.size < this.maxQueueSize;
   }
 
-  processLoop() {
-    this.scheduleNextProcessLoop();
-    while (this.canProcessMore() && this.processNext()) {}
-  }
-
-  clearProcessLoop() {
-    if (this.loopTimeout) {
-      clearTimeout(this.loopTimeout);
-      this.loopTimeout = null;
-    }
-  }
-
-  scheduleNextProcessLoop() {
-    this.clearProcessLoop();
-    if (!this.loopTimeout) {
-      this.loopTimeout = setTimeout(() => {
-        this.loopTimeout = null;
-        this.processLoop();
-      }, this.settings.processLoopIntervalMs);
-    }
-  }
-
-  addClosePromiseCallback(closePromiseCallback) {
-    this.closePromiseCallbacks.push(closePromiseCallback);
+  async processLoop() {
+    while (this.canProcessMore() && (await this.processNext())) {}
   }
 
   addOpenPromiseCallback(openPromiseCallback) {
     this.openPromiseCallbacks.push(openPromiseCallback);
   }
 
-  onClose() {
-    if (!this.onClosePromise) {
-      this.onClosePromise = new Promise(resolve => {
-        this.closeCallback = () => resolve();
-      });
-    }
-    return this.onClosePromise;
-  }
-
-  close() {
-    this.closing = true;
-    this.clearProcessLoop();
-    let closePromises = this.closePromiseCallbacks.map(cb =>
+  async open() {
+    const openPromises = this.openPromiseCallbacks.map(cb =>
       Promise.resolve(cb())
     );
+    return await Promise.all(openPromises).then(() => this.emit('started'));
+  }
 
-    return Promise.all(closePromises).then(() => {
-      this.running = false;
-      if (this.closeCallback) {
-        this.closeCallback();
+  addClosePromiseCallback(closePromiseCallback) {
+    this.closePromiseCallbacks.push(closePromiseCallback);
+  }
+
+  async onClose() {
+    if (this.running) {
+      if (!this.onClosePromise) {
+        this.onClosePromise = new Promise(resolve => {
+          this.on('closed', () => resolve());
+        });
       }
-    });
+      return this.onClosePromise;
+    }
+  }
+
+  async close() {
+    if (!this.closing) {
+      this.closing = true;
+      let closePromises = this.closePromiseCallbacks.map(cb =>
+        Promise.resolve(cb())
+      );
+
+      return await Promise.all(closePromises).then(() => {
+        this.running = false;
+        this.emit('closed');
+      });
+    }
   }
 }
 

@@ -176,12 +176,16 @@ class CrawlerCreator {
   }
 
   instantiateDownloaderMiddlewares(middlewaresObj) {
-    return Object.keys(middlewaresObj).map(middlewareName =>
-      this.instantiateDownloaderMiddleware(
-        middlewareName,
-        middlewaresObj[middlewareName]
-      )
-    );
+    return Object.keys(middlewaresObj).map(middlewareName => {
+      if (typeof middlewaresObj[middlewareName] === 'function') {
+        return middlewaresObj[middlewareName]();
+      } else {
+        return this.instantiateDownloaderMiddleware(
+          middlewareName,
+          middlewaresObj[middlewareName]
+        );
+      }
+    });
   }
 
   loadDownloaderMiddlewares(middlewares) {

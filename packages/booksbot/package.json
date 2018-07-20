@@ -1,0 +1,22 @@
+{
+  "name": "booksbot",
+  "version": "1.0.0",
+  "description": "This is a \"node-crawling-framework\" project to scrape quotes from famous people from http://quotes.toscrape.com∆",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "crawl": "node index.js"
+  },
+  "dependencies": {
+    "fs-extra": "^6.0.1",
+    "ncf-puppeteer": "^1.0.0",
+    "node-crawling-framework": "0.0.1-alpha.1"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "none",
+    "parser": "flow",
+    "semi": true,
+    "tabWidth": 2
+  }
+}

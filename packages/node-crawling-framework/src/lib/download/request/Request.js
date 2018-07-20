@@ -4,6 +4,7 @@ class Request {
     //TODO: Extract common request interface: method, formdata, callback, callback arguments, and leave the rest in metadata
     Object.assign(this, options);
     this.method = this.method || 'GET';
+    this.metadata = this.metadata || {};
   }
 
   static isRequest(value) {

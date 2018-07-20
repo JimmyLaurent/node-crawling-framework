@@ -3,15 +3,16 @@ const RequestFilter = require('./request/RequestFilter');
 const Request = require('./request/Request');
 
 class DownloadManager extends BaseAsyncQueueProcessor {
-  constructor(settings) {
+  constructor(settings, requestFilter) {
     super(null, {
       maxDownloadConcurency: 1,
       maxDownloadQueueSize: 50,
+      filterDuplicateRequests: true,
       ...settings,
       processMethodName: 'download',
       autoCloseOnIdle: false
     });
-    this.requestFilter = new RequestFilter();
+    this.requestFilter = requestFilter || new RequestFilter();
     this.addClosePromiseCallback(() => this.requestFilter.close());
     this.maxConcurency = this.settings.maxDownloadConcurency;
     this.maxQueueSize = this.settings.maxDownloadQueueSize;
@@ -28,12 +29,6 @@ class DownloadManager extends BaseAsyncQueueProcessor {
   }
 
   download(request) {
-    if (!this.downloader) {
-      throw new Error('DownloadManager: Downloader not loaded');
-    }
-    if (!request) {
-      return;
-    }
     return this.downloader.download(request);
   }
 
@@ -42,9 +37,12 @@ class DownloadManager extends BaseAsyncQueueProcessor {
   }
 
   schedule(request) {
+    if (!this.downloader) {
+      throw new Error('DownloadManager: downloader not loaded');
+    }
     if (!Request.isRequest(request)) {
       throw new Error(
-        'DownloaderManager.schedule only accepts requests objects'
+        'DownloaderManager: schedule only accepts requests objects'
       );
     }
     if (

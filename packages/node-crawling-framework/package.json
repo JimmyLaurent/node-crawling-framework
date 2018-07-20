@@ -1,6 +1,6 @@
 {
   "name": "node-crawling-framework",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.2",
   "description": "NodeJs crawling & scraping framework heavily inspired by Scrapy (Pyhton)",
   "main": "src/index.js",
   "author": "Jimmy Laurent <jimlaurent0@gmail.com>",
@@ -35,7 +35,8 @@
     "sha1": "^1.1.1"
   },
   "devDependencies": {
-    "jest": "^23.1.0"
+    "jest": "^23.1.0",
+    "static-server": "^2.2.1"
   },
   "prettier": {
     "singleQuote": true,
@@ -43,5 +44,8 @@
     "parser": "flow",
     "semi": true,
     "tabWidth": 2
+  },
+  "jest": {
+    "testPathIgnorePatterns": ["src/lib/crawler/__tests__/mock-server/"]
   }
 }

@@ -3,15 +3,15 @@ class MemoryQueue {
     this.queue = [];
   }
 
-  enqueue(args, callbacks) {
-    this.queue.push({ args, callbacks });
+  async enqueue(args, callbacks) {
+    return this.queue.push({ args, callbacks });
   }
 
-  dequeue() {
-    return this.queue.pop();
+  async dequeue() {
+    return this.queue.shift();
   }
 
-  isEmpty() {
+  async isEmpty() {
     return this.queue.length === 0;
   }
 

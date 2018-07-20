@@ -1,0 +1,15 @@
+{
+  "name": "ncf-puppeteer",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.5.1",
+    "generic-pool": "^3.4.2",
+    "node-crawling-framework": "^0.0.1-alpha.1",
+    "proxy-chain": "^0.2.3",
+    "puppeteer": "^1.5.0",
+    "type-check": "^0.3.2",
+    "underscore": "^1.9.1"
+  }
+}

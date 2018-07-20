@@ -1,10 +1,13 @@
 class Response {
-  constructor(statusCode, body, url, headers = {}, metadata = {}) {
+  constructor(statusCode, body, url, headers = {}) {
     this.statusCode = statusCode;
     this.body = body;
     this.url = url;
     this.headers = headers;
-    this.metadata = metadata;
+  }
+
+  get metadata() {
+    return this.request.metadata;
   }
 }
 

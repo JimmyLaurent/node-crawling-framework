@@ -128,9 +128,18 @@ crawler.crawl().then(() => {
 - Add MongoDb feeder/exporter
 - Make some benchmarks ?
 - Finish formRequest scraping ( add clickables elements)
-- Add Puppeteer downloader
+- Utils: add date parse(moment wrapper), datapager helper ?
+- adding multi spider support ?
+- add crawling queue to settings / possibility to override the queue (could allow shared redis queue for distributed crawling)
+- allow to override/set/configure DownloadManager: could allow proxy pool handling for example
+- Puppeteer downloader:
+  * be compatible with header and cookie middlewares
 - Split plugins/middlewares in packages
-- Command line tool, "nfc-cli"
+- Command line tool, "ncf-cli"
   * scaffolding: create project (with wizard), spider, any middleware
   * crawl: launch crawl
   * deploy: deploy to node-job-server
+- find solution for Dns Caching 
+- middleware to respect "robots.txt"
+- limit max reponse size
+- auto throttle

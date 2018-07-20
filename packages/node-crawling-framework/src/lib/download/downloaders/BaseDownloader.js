@@ -25,8 +25,8 @@ class BaseDownloader extends BaseMiddleware {
   processResponse(res, req) {}
 
   processError(e) {
-    console.error(e);
-    console.error(e.stack);
+    // console.error(e);
+    // console.error(e.stack);
   }
 
   get logger() {
